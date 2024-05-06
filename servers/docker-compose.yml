@@ -1,0 +1,115 @@
+services:
+    xbillpay:
+        build:
+            context: .
+            dockerfile: ./apps/authservice/Dockerfile
+            args:
+                NODE_ENV: development
+            target: development
+        depends_on:
+            - nats
+            - mysql_db
+        container_name: xbillpay
+        restart: always
+        ports:
+            - '9000:9000'
+        command: npm run start:dev authservice
+        env_file:
+            - ./.env
+        volumes:
+            - .:/usr/src/app
+            - /usr/src/app/node_modules
+
+    walletservice:
+        build:
+            context: .
+            dockerfile: ./apps/walletservice/Dockerfile
+            args:
+                NODE_ENV: development
+            target: development
+        depends_on:
+            - nats
+            - mysql_db
+        container_name: walletservice
+        restart: always
+        ports:
+            - '9001:9001'
+        command: npm run start:dev walletservice
+        env_file:
+            - ./.env
+        volumes:
+            - .:/usr/src/app
+            - /usr/src/app/node_modules
+
+    transferservice:
+        build:
+            context: .
+            dockerfile: ./apps/transferservice/Dockerfile
+            args:
+                NODE_ENV: development
+            target: development
+        depends_on:
+            - nats
+            - mysql_db
+        container_name: transferservice
+        restart: always
+        ports:
+            - '9002:9002'
+        command: npm run start:dev transferservice
+        env_file:
+            - ./.env
+        volumes:
+            - .:/usr/src/app
+            - /usr/src/app/node_modules
+
+    paymentservice:
+        build:
+            context: .
+            dockerfile: ./apps/paymentservice/Dockerfile
+            args:
+                NODE_ENV: development
+            target: development
+        depends_on:
+            - nats
+            - mysql_db
+        container_name: paymentservice
+        restart: always
+        ports:
+            - '9003:9003'
+        command: npm run start:dev paymentservice
+        env_file:
+            - ./.env
+        volumes:
+            - .:/usr/src/app
+            - /usr/src/app/node_modules
+
+    nats:
+        image: nats
+        container_name: nats
+        ports:
+            - '4222:4222' # nats client port
+            - '8222:8222' # nats info port
+
+    mysql_db:
+        image: mysql
+        container_name: mysql_db
+        ports:
+            - '3306:3306'
+        environment:
+            - MYSQL_ROOT_PASSWORD=xbillpay123
+            - MYSQL_DATABASE=xbillpay_dbase
+            - MYSQL_USER=xbillpay
+            - MYSQL_PASSWORD=xbillpay123
+            - MYSQL_TCP_PORT=3306
+
+    nginx-proxy:
+        build:
+            dockerfile: Dockerfile
+            context: ./proxy
+        depends_on:
+            - xbillpay
+            - walletservice
+            - transferservice
+            - paymentservice
+        ports:
+            - 80:80
