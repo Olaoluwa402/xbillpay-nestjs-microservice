@@ -230,7 +230,7 @@ export class PaymentserviceService {
           payeeId: user.id,
           reference: ref,
           status: BillStatus.PAID,
-          type: BillType.DATA,
+          type: BillType.UTILITY,
           amount: dto.amount,
           paymentDate: new Date(),
           extralInfo: extralInfo as Prisma.JsonObject

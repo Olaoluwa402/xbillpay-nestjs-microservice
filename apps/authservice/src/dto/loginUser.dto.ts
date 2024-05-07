@@ -14,3 +14,10 @@ export class LoginUserDto {
     @Length(5, 20)
     password: string;
 }
+
+export class RefreshTokenDto {
+    @ApiProperty()
+    @IsNotEmpty()
+    @IsString()
+    refresh_token: string;
+}

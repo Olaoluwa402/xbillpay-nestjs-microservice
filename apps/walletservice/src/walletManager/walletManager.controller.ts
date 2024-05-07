@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, HttpStatus } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, HttpStatus, HttpCode } from '@nestjs/common';
 import { WalletService } from './walletManager.service';
 import { CreateWalletDto, GetWalletDto, UpdateWalletBalanceDto, WalletToWalletTransferDto } from './dto/wallet.dto';
 import { EventPattern, MessagePattern, Payload } from '@nestjs/microservices';
@@ -59,14 +59,14 @@ export class WalletController {
     })
   }
 
-
+  @HttpCode(HttpStatus.CREATED)
   @UseGuards(JwtGuard, RolesGuard)
   @Post()
   @Roles(Role.AGENT)
   @ApiOperation({ summary: 'manually create wallet for agent if auto fails' })
   async manualWalletCreation(@GetUser() user: User): Promise<any> {
     return this.utilService.createResponse("success", {
-      status: HttpStatus.OK,
+      status: HttpStatus.CREATED,
       data: await this.walletService.manualWalletCreation(user)
     })
   }

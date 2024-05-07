@@ -6,7 +6,7 @@ import { RegisterUserDto } from './dto/registerUser.dto';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { JwtGuard, RefreshJwtGuard, GetUser, UtilsService } from '@app/common';
 import type { User } from '@prisma/client';
-import { LoginUserDto } from './dto/loginUser.dto';
+import { LoginUserDto, RefreshTokenDto } from './dto/loginUser.dto';
 
 
 @ApiTags('auth')
@@ -35,12 +35,13 @@ export class AuthController {
     })
   }
 
-  @HttpCode(HttpStatus.OK)
+  @HttpCode(HttpStatus.CREATED)
   @UseGuards(RefreshJwtGuard)
+  @ApiOperation({ summary: 'refresh agent token' })
   @Post('refresh-token')
-  async refreshToken(@GetUser() user: User) {
+  async refreshToken(@GetUser() user: User, @Body() dto: RefreshTokenDto) {
     return this.utilService.createResponse("success", {
-      status: HttpStatus.OK,
+      status: HttpStatus.CREATED,
       data: await this.authService.refreshToken(user)
     })
   }

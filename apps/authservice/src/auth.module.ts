@@ -29,7 +29,6 @@ export class AppModule {
       .setDescription('Everything authentication and authorization')
       .setVersion('1.0')
       .addTag('auth')
-      .addTag('users')
       .build();
 
     const document = SwaggerModule.createDocument(app, options);

@@ -22,9 +22,13 @@
 -   create .env file in root dir. check env.example for env values
 -   start containers: docker compose up -d --build -V
 
-## api services url
+## swagger documentation api services url
 
 -   localhost/api
 -   localhost/wallet-api/api
 -   localhost/payment-api/api
 -   localhost/transfer-api/api
+
+## postman documantation:
+
+-   https://documenter.getpostman.com/view/18642736/2sA3JJ9Nrx
