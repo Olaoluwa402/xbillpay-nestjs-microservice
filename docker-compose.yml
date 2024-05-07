@@ -102,6 +102,15 @@ services:
             - MYSQL_PASSWORD=xbillpay123
             - MYSQL_TCP_PORT=3306
 
+    migrations:
+        build:
+            context: .
+            dockerfile: ./prisma/Dockerfile
+        env_file:
+            - ./.env
+        depends_on:
+            - mysql_db
+
     nginx-proxy:
         build:
             dockerfile: Dockerfile

@@ -1,43 +1,42 @@
-import { ApiProperty } from "@nestjs/swagger";
-import { IsNotEmpty, IsNumber, IsString } from "class-validator";
+import { ApiProperty } from '@nestjs/swagger';
+import { IsNotEmpty, IsNumber, IsString } from 'class-validator';
 
 export class CreateWalletDto {
+    @ApiProperty()
     @IsNotEmpty()
     @IsNumber()
     userId: number;
 }
 
 export class FundWalletDto extends CreateWalletDto {
+    @ApiProperty()
     @IsNotEmpty()
     @IsNumber()
-    @ApiProperty()
     amount: number;
 }
 
 export class WalletToWalletTransferDto {
+    @ApiProperty()
     @IsNotEmpty()
     @IsString()
-    @ApiProperty()
-    amount: number
+    amount: number;
 
+    @ApiProperty()
     @IsNotEmpty()
     @IsNumber()
-    @ApiProperty()
-    receiverId: number
+    receiverId: number;
 
+    @ApiProperty()
     @IsNotEmpty()
     @IsNumber()
-    @ApiProperty()
-    senderId: number
+    senderId: number;
 }
 
-
-export class GetWalletDto extends CreateWalletDto {
-}
+export class GetWalletDto extends CreateWalletDto {}
 
 export class UpdateWalletBalanceDto extends CreateWalletDto {
+    @ApiProperty()
     @IsNotEmpty()
     @IsNumber()
-    @ApiProperty()
     amount: number;
 }

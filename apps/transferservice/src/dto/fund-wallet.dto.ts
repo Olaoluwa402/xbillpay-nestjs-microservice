@@ -1,28 +1,28 @@
-import { IsNotEmpty, IsNumber, IsString } from "class-validator";
+import { IsNotEmpty, IsNumber, IsString } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class FundWalletDto {
+    @ApiProperty()
     @IsNotEmpty()
     @IsNumber()
-    @ApiProperty()
-    amount: number
+    amount: number;
 }
 
 export class CompleteWalletFundingDto {
+    @ApiProperty()
     @IsNotEmpty()
     @IsString()
-    @ApiProperty()
-    paystackReference: string
+    paystackReference: string;
 }
 
 export class WalletToWalletTransferDto {
+    @ApiProperty()
     @IsNotEmpty()
     @IsNumber()
-    @ApiProperty()
-    amount: number
+    amount: number;
 
+    @ApiProperty()
     @IsNotEmpty()
     @IsNumber()
-    @ApiProperty()
-    receiverId: number
+    receiverId: number;
 }
