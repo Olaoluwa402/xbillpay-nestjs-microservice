@@ -1,0 +1,18 @@
+replicaCount: 1
+
+image:
+    repository: registry.digitalocean.com/xbillpay-microservice-registry/xbillpay-microservice_mysql_db
+    tag: latest
+    pullPolicy: Always
+
+service:
+    type: 'NodePort'
+    port: 3306
+    targetport: 3306
+    name: mysql_db
+
+container:
+    name: mysql_db
+
+secrets:
+    existingSecret: common-secrets

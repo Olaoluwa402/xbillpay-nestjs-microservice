@@ -1,0 +1,18 @@
+replicaCount: 1
+
+image:
+    repository: registry.digitalocean.com/xbillpay-staging-registry/xbillpay-platform_walletservice
+    tag: latest
+    pullPolicy: Always
+
+service:
+    type: 'NodePort'
+    port: 9001
+    targetport: 9001
+    name: walletservice
+
+container:
+    name: walletservice
+
+secrets:
+    existingSecret: common-secrets

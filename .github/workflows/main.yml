@@ -1,0 +1,153 @@
+name: xbillpay - pipeline
+
+on:
+    workflow_dispatch:
+    push:
+        branches:
+            - staging-xbillpay
+
+jobs:
+    buildAndPush:
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v2
+
+            - name: Set up Node.js
+              uses: actions/setup-node@v3
+              with:
+                  node-version: '18'
+
+            - name: Change to the app directory
+              run: cd /home/runner/work/xbillpay-nestjs-microservice/xbillpay-nestjs-microservice
+
+            - name: Use environment variables instead of copying files
+              run: |
+                  echo "AUTHPORT=${{ secrets.AUTHPORT }}" >> .env
+                  echo "PAYMENTPORT=${{ secrets.PAYMENTPORT }}" >> .env
+                  echo "WALLETPORT=${{ secrets.WALLETPORT }}" >> .env
+                  echo "TRANSFERPORT=${{ secrets.TRANSFERPORT }}" >> .env
+
+            - name: Install Helm v3
+              run: |
+                  curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3
+                  chmod 700 get_helm.sh
+                  ./get_helm.sh
+
+            - name: Install doctl - staging
+              if: github.ref == 'refs/heads/staging-xbillpay'
+              uses: digitalocean/action-doctl@v2
+              with:
+                  token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
+
+            - name: Build Docker Images
+              if: github.ref == 'refs/heads/staging-xbillpay'
+              run: |
+                  set -x
+                  docker stop $(docker ps -a -q) && docker rm $(docker ps -a -q)
+                  docker rmi $(docker images -q)
+                  docker system prune --all --force --volumes
+                  docker-compose -f docker-compose.yml build
+                  set +x
+
+            - name: Log in to DigitalOcean Container Registry with short-lived credentials
+              if: github.ref == 'refs/heads/staging-xbillpay'
+              run: doctl registry login --expiry-seconds 1200
+
+            - name: Tag and Push Docker Images to Digital Ocean Container Registry
+              if: github.ref == 'refs/heads/staging-xbillpay'
+              run: |
+                  set -x
+                  DATE_TAG=$(date +"%Y%m%d%H%M%S")
+                  LATEST_TAGGED=false
+                  IMAGE_IDS=$(docker images -q)
+                  for ID in $(echo "${IMAGE_IDS}"); do
+                    # Debugging: Print information about the current iteration
+                    echo "Processing image ID: $ID"
+
+                    # Extract the repository name from the existing image tag
+                    REPO_NAME=$(docker inspect --format='{{ index .RepoTags 0 }}' $ID)
+                    echo "REPO_NAME: $REPO_NAME"
+
+                    # Replace the existing repository name with the ACR repository
+                    #registry.digitalocean.com/registry-name/image-name:tag
+                    REPO_TAG=${REPO_NAME%:*}  # Remove the current tag
+                    REPO_TAG=${{ secrets.DOCR_URL }}/${{secrets.DOCR_NAME_STAGING}}/${REPO_TAG#*/}
+                    echo "REPO_TAG: $REPO_TAG"
+
+                    VERSIONED_TAG=$REPO_TAG:$DATE_TAG
+                    echo "Pushing Docker Image: $VERSIONED_TAG"
+
+                    docker tag $ID $VERSIONED_TAG
+                    docker push $VERSIONED_TAG
+
+                    if [ "$LATEST_TAGGED" == false ]; then
+                      LATEST_TAGGED=true
+                      echo "Pushing Docker Image (latest): $REPO_TAG:latest"
+                      docker tag $ID $REPO_TAG:latest
+                      docker push $REPO_TAG:latest
+                      echo "Pushing Docker Image (latest after push): $REPO_TAG:latest"
+                      LATEST_TAGGED=false
+                    fi
+                  done
+                  set +x
+              shell: bash
+
+    deployToK8sStaging:
+        runs-on: ubuntu-latest
+        needs: buildAndPush
+        if: github.event_name == 'push' && github.ref == 'refs/heads/staging-xbillpay'
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v2
+
+            - name: Change to the app directory
+              run: cd /home/runner/work/xbillpay-nestjs-microservice/xbillpay-nestjs-microservice
+
+            - name: Set up kubectl for Digital Ocean
+              run: |
+                  curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+                  chmod +x kubectl
+                  sudo mv kubectl /usr/local/bin/kubectl
+
+            - name: Install doctl
+              if: github.ref == 'refs/heads/staging-xbillpay'
+              uses: digitalocean/action-doctl@v2
+              with:
+                  token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
+
+            - name: Deploy Helm Charts to Staging
+              run: |
+                  doctl kubernetes cluster kubeconfig save --expiry-seconds 600 ${{ secrets.DIGITALOCEAN_STAGING_CLUSTER_NAME }}
+                  # kubectl create namespace xbillpay-staging-ns --dry-run=client -o yaml | kubectl apply -f -
+                  # kubectl create namespace ingress-nginx --dry-run=client -o yaml | kubectl apply -f -
+                  # kubectl create namespace cert-manager --dry-run=client -o yaml | kubectl apply -f -
+
+                  # Install Ingress-Nginx Helm chart
+                  helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+                  helm repo update
+
+
+                  # Install Cert Manager Helm chart
+                  kubectl apply --validate=false -f https://github.com/jetstack/cert-manager/releases/download/v1.13.3/cert-manager.crds.yaml
+                  helm repo add jetstack https://charts.jetstack.io
+                  helm repo update
+                  helm upgrade --install cert-manager jetstack/cert-manager --namespace cert-manager --version v1.13.3 --set installCRDs=false
+
+                  # Wait for Cert Manager components to be ready
+                  kubectl wait --namespace cert-manager --for=condition=Ready pod --selector=app.kubernetes.io/component=controller --timeout=300s
+
+                  # Apply Let's Encrypt issuer configuration
+                  kubectl apply -f ./helm-chart-staging/letsencrypt-staging-issuer.yaml
+
+                  # Apply ingress configuration
+                  kubectl apply -f ./helm-chart-staging/ingressnginx/ingress.yaml
+
+                  helm upgrade --install xbillpay ./helm-chart-staging/authservice --namespace xbillpay-staging-ns --recreate-pods
+                  helm upgrade --install walletservice ./helm-chart-staging/walletservice --namespace xbillpay-staging-ns --recreate-pods
+                  helm upgrade --install paymentservice ./helm-chart-staging/paymentservice --namespace xbillpay-staging-ns --recreate-pods
+                  helm upgrade --install transferservice ./helm-chart-staging/transferservice --namespace xbillpay-staging-ns --recreate-pods
+                  helm upgrade --install nats ./helm-chart-staging/nats --namespace xbillpay-staging-ns --recreate-pods
+                  helm upgrade --install migrations ./helm-chart-staging/migrations --namespace xbillpay-staging-ns --recreate-pods
+                  helm upgrade --install mysql_db ./helm-chart-staging/mysql_db --namespace xbillpay-staging-ns --recreate-pods

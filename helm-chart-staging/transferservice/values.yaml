@@ -1,0 +1,18 @@
+replicaCount: 1
+
+image:
+    repository: registry.digitalocean.com/xbillpay-staging-registry/xbillpay-platform_transferservice
+    tag: latest
+    pullPolicy: Always
+
+service:
+    type: 'NodePort'
+    port: 9002
+    targetport: 9002
+    name: transferservice
+
+container:
+    name: transferservice
+
+secrets:
+    existingSecret: common-secrets

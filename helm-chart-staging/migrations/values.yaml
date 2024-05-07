@@ -1,0 +1,16 @@
+replicaCount: 1
+
+image:
+    repository: registry.digitalocean.com/xbillpay-microservice-registry/xbillpay-microservice_migrations
+    tag: latest
+    pullPolicy: Always
+
+service:
+    type: 'NodePort'
+    name: migrations
+
+container:
+    name: migrations
+
+secrets:
+    existingSecret: common-secrets

@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata: 
+  name: {{ .Values.service.name | quote }}
+  labels:
+    {{- include "nats-helm-staging.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: {{ .Values.service.targetport }}
+      name: "http"
+  selector:
+    {{- include "nats-helm-staging.selectorLabels" . | nindent 4 }}
+   

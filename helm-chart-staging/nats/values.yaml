@@ -1,0 +1,18 @@
+replicaCount: 1
+
+image:
+    repository: registry.digitalocean.com/hitchafrica-staging-registry/hitchafrica-platform_nats
+    tag: latest
+    pullPolicy: Always
+
+service:
+    type: 'NodePort'
+    port: 4222
+    targetport: 4222
+    name: nats
+
+container:
+    name: nats
+
+secrets:
+    existingSecret: common-secrets

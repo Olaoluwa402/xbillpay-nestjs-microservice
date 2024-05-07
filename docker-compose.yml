@@ -106,6 +106,7 @@ services:
         build:
             context: .
             dockerfile: ./prisma/Dockerfile
+        container_name: migrations
         env_file:
             - ./.env
         depends_on:

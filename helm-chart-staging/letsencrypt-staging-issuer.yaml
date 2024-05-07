@@ -1,0 +1,16 @@
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: letsencrypt-staging
+  namespace: hitchafrica-staging-ns
+spec:
+  acme:
+    email: olaoluwaibukun@gmail.com 
+    server: https://acme-v02.api.letsencrypt.org/directory 
+  
+    privateKeySecretRef:
+      name: letsencrypt-staging-private-key
+    solvers:
+    - http01:
+        ingress:
+          class: nginx

@@ -1,0 +1,18 @@
+replicaCount: 1
+
+image:
+    repository: registry.digitalocean.com/xbillpay-microservice-registry/xbillpay-microservice_paymentservice
+    tag: latest
+    pullPolicy: Always
+
+service:
+    type: 'NodePort'
+    port: 9003
+    targetport: 9003
+    name: paymentservice
+
+container:
+    name: paymentservice
+
+secrets:
+    existingSecret: common-secrets

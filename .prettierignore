@@ -1,0 +1,4 @@
+helm-chart-staging/*.yaml
+helm-chart-staging/**/*.yaml
+helm-chart-staging/*.yml
+helm-chart-staging/**/*.yml

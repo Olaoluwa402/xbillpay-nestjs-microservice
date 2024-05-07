@@ -17,7 +17,6 @@
 ## start app
 
 -   clone repo: git clone git@github.com:Olaoluwa402/xbillpay-nestjs-microservice.git
--   cd servers
 -   npm i
 -   create .env file in root dir. check env.example for env values
 -   start containers: docker compose up -d --build -V
